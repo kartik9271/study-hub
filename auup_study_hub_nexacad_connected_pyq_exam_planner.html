@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AUUP Study Hub — Nexacad Connected PYQ &amp; Exam Planner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
+        }
+      }
+    };
+  </script>
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; }
+    .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col">
+
+  <!-- Top Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <div class="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0 font-bold text-sm">A</div>
+        <div class="truncate">
+          <h1 class="text-sm sm:text-base font-bold text-slate-900 truncate">AUUP Study Hub</h1>
+          <p class="text-[11px] text-slate-500 hidden sm:block">Connected to Nexacad Resources &bull; 4 Core Subjects</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 shrink-0">
+        <a href="https://nexacad.pages.dev/pages/resources" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          <span>Nexacad Connected &nearr;</span>
+        </a>
+        <button id="btnResetProgress" class="px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition">Reset Progress</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 4-Subject Switcher -->
+  <div class="bg-white border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex items-center gap-2 overflow-x-auto scrollbar-thin" id="subjectTabs">
+      <!-- Rendered dynamically -->
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl w-full mx-auto px-4 sm:px-6 py-5 flex-1 flex flex-col gap-5">
+
+    <!-- Subject Hero & Exam Countdown -->
+    <section id="subjectBanner" class="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <!-- Rendered dynamically -->
+    </section>
+
+    <!-- Mode Tabs -->
+    <div class="flex items-center gap-1 bg-slate-200/70 p-1 rounded-xl w-full sm:w-fit overflow-x-auto">
+      <button data-tab="study" class="tab-btn px-3.5 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition whitespace-nowrap">1. Study Notes &amp; Q&amp;A</button>
+      <button data-tab="papers" class="tab-btn px-3.5 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition whitespace-nowrap">2. Nexacad Papers &amp; Weightage</button>
+      <button data-tab="roadmap" class="tab-btn px-3.5 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition whitespace-nowrap">3. Countdown Roadmap</button>
+    </div>
+
+    <!-- TAB 1: Study Notes, Formulas, Starred PYQs & Notebook Q&A -->
+    <section id="view-study" class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+      <!-- Left: Module Notes & Starred PYQ Topics -->
+      <div class="lg:col-span-7 flex flex-col gap-4">
+        <div class="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-sm flex flex-col gap-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 class="text-sm font-semibold text-slate-900">Module Notes &amp; Starred PYQ Topics</h2>
+              <p class="text-xs text-slate-500">&#9733; Marks high-frequency concepts across Nexacad papers</p>
+            </div>
+            <select id="moduleFilterSelect" class="text-xs px-2.5 py-1.5 border border-slate-200 rounded-lg bg-slate-50 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="all">All Modules</option>
+            </select>
+          </div>
+          <div id="modulesFeed" class="flex flex-col gap-3 max-h-[540px] overflow-y-auto scrollbar-thin pr-1">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Notebook Study Assistant -->
+      <div class="lg:col-span-5 flex flex-col gap-4">
+        <div class="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-sm flex flex-col gap-3 h-full">
+          <div class="border-b border-slate-100 pb-3">
+            <h2 class="text-sm font-semibold text-slate-900">Study Assistant</h2>
+            <p class="text-xs text-slate-500">Instant formulas, starred PYQs &amp; self-tests for this subject</p>
+            <div class="flex flex-wrap gap-1.5 mt-2.5">
+              <button data-action="formulas" class="studio-btn px-2.5 py-1 text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition">Formula Sheet</button>
+              <button data-action="starred" class="studio-btn px-2.5 py-1 text-xs font-medium bg-amber-50 text-amber-800 border border-amber-200 rounded-lg hover:bg-amber-100 transition">&#9733; Must-Do PYQs</button>
+              <button data-action="quiz" class="studio-btn px-2.5 py-1 text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition">Quick Self-Test</button>
+            </div>
+          </div>
+
+          <div id="chatFeed" class="flex-1 min-h-[300px] max-h-[420px] overflow-y-auto scrollbar-thin flex flex-col gap-2.5 p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+            <!-- Rendered dynamically -->
+          </div>
+
+          <form id="studyQueryForm" class="flex gap-2">
+            <input id="studyQueryInput" type="text" placeholder="Ask e.g. 'Thevenin', 'EDTA', 'recursion', 'eigen'..." class="flex-1 text-xs sm:text-sm px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            <button type="submit" class="px-4 py-2 text-xs sm:text-sm font-semibold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition shrink-0">Search</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: Nexacad Papers & PYQ Weightage -->
+    <section id="view-papers" class="hidden flex-col gap-5">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <!-- Weightage Chart -->
+        <div class="lg:col-span-6 bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-sm flex flex-col gap-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-sm font-semibold text-slate-900">Module Weightage Distribution</h2>
+              <p class="text-xs text-slate-500">Based on Major &amp; Minor PYQ frequency</p>
+            </div>
+          </div>
+          <div class="relative h-72 w-full">
+            <canvas id="weightageChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Nexacad Papers Tracker -->
+        <div class="lg:col-span-6 bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-sm flex flex-col gap-3">
+          <div class="flex items-center justify-between gap-2">
+            <div>
+              <h2 class="text-sm font-semibold text-slate-900">Nexacad PYQ Papers Checklist</h2>
+              <p class="text-xs text-slate-500">Open paper on Nexacad &amp; tick off once solved</p>
+            </div>
+            <span id="papersSolvedBadge" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700">0/0 solved</span>
+          </div>
+          <div id="nexacadPapersList" class="flex flex-col gap-2 max-h-72 overflow-y-auto scrollbar-thin pr-1">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Priority Table -->
+      <div class="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-sm">
+        <h3 class="text-sm font-semibold text-slate-900 mb-3">Module Study Priority</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs sm:text-sm">
+            <thead>
+              <tr class="border-b border-slate-200 text-slate-500 text-xs uppercase">
+                <th class="py-2 pr-3 font-medium">Module</th>
+                <th class="py-2 px-3 font-medium">Weightage</th>
+                <th class="py-2 px-3 font-medium">Priority</th>
+                <th class="py-2 pl-3 font-medium">High-Yield PYQ Topics</th>
+              </tr>
+            </thead>
+            <tbody id="priorityTableBody" class="divide-y divide-slate-100">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: Countdown Roadmap -->
+    <section id="view-roadmap" class="hidden flex-col gap-5">
+      <div class="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-sm font-semibold text-slate-900">Day-by-Day Exam Roadmap</h2>
+          <p class="text-xs text-slate-500">Weighted by module priority with final days reserved for Nexacad Major/Minor mock papers</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2.5">
+          <label class="text-xs text-slate-600 flex items-center gap-1.5">
+            <span>Daily hrs:</span>
+            <input id="dailyHoursInput" type="number" min="1" max="14" value="3" class="w-14 px-2 py-1 border border-slate-200 rounded-lg text-xs font-semibold text-center" />
+          </label>
+          <button id="btnRegenerateRoadmap" class="px-3 py-1.5 text-xs font-semibold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">Regenerate Plan</button>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+        <div class="flex justify-between text-xs font-medium mb-1.5">
+          <span class="text-slate-700">Roadmap Progress</span>
+          <span id="roadmapProgressText" class="text-indigo-600 font-semibold">0 / 0 days</span>
+        </div>
+        <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+          <div id="roadmapProgressBar" class="h-full bg-indigo-600 rounded-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <div id="roadmapList" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Rendered dynamically -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed bottom-4 right-4 z-50 bg-slate-900 text-white text-xs font-medium px-4 py-2.5 rounded-xl shadow-lg opacity-0 pointer-events-none transition-opacity duration-200"></div>
+
+  <script>
+    const STORAGE_KEY = 'auup_study_hub_v2';
+
+    function offsetDateISO(days) {
+      const d = new Date();
+      d.setDate(d.getDate() + days);
+      return d.toISOString().split('T')[0];
+    }
+
+    const SUBJECTS_DATA = [
+      {
+        id: 'bee',
+        code: 'ES103',
+        name: 'Basic Electrical Engineering',
+        examDate: offsetDateISO(7),
+        dailyHours: 3,
+        modules: [
+          {
+            id: 'bee-m1',
+            title: 'Module 1: DC Circuits & Network Theorems',
+            weightage: 30,
+            starred: true,
+            summary: 'Covers KVL/KCL, Mesh & Nodal analysis, Star-Delta conversion, and Superposition, Thevenin, Norton, and Maximum Power Transfer theorems.',
+            formulas: [
+              'Thevenin Current: I_L = V_th / (R_th + R_L)',
+              'Max Power Transfer: R_L = R_th, P_max = V_th² / (4 R_th)',
+              'Delta to Star: R_1 = (R_12 · R_31) / (R_12 + R_23 + R_31)'
+            ],
+            pyqs: [
+              'State and prove Thevenin’s theorem. Find current in the 5Ω load resistor. (2025 Dec Major ★)',
+              'Apply Superposition theorem to find current in the 10Ω branch. (2024 Major ★)',
+              'Convert a Thevenin equivalent into Norton equivalent and verify KVL/KCL. (2024 Major)'
+            ]
+          },
+          {
+            id: 'bee-m2',
+            title: 'Module 2: AC Fundamentals, Phasors & RLC',
+            weightage: 25,
+            starred: true,
+            summary: 'Sinusoidal waveforms, RMS & average values, form/peak factors, series & parallel RLC resonance, bandwidth, and Q-factor.',
+            formulas: [
+              'RMS (sine): V_rms = V_m / √2 ≈ 0.707 V_m | Avg = 2V_m / π ≈ 0.637 V_m',
+              'Series Resonance: f_r = 1 / (2π√(LC)) | Q = (1/R)√(L/C)',
+              'Active Power: P = VI cos(φ) | Power Factor = R / Z'
+            ],
+            pyqs: [
+              'Derive relation between RMS and average value of a sinusoidal AC wave. (2024 Major ★)',
+              'Derive condition for series RLC resonance and define bandwidth & Q-factor. (2025 Dec Major ★)'
+            ]
+          },
+          {
+            id: 'bee-m3',
+            title: 'Module 3: Single-Phase Transformers',
+            weightage: 25,
+            starred: true,
+            summary: 'Working principle, EMF equation, ideal vs practical transformer, core & copper losses, OC & SC tests, efficiency & voltage regulation.',
+            formulas: [
+              'EMF Equation: E = 4.44 · f · N · Φ_m',
+              'Efficiency: η = (x · kVA · cosφ) / (x · kVA · cosφ + P_i + x² P_cu)',
+              'Max Efficiency condition: Iron Loss (P_i) = Copper Loss (x² P_cu)'
+            ],
+            pyqs: [
+              'Derive the EMF equation of a single-phase transformer and explain losses. (2025 Dec Major ★)',
+              'Explain OC and SC tests to find efficiency and voltage regulation. (2024 Major ★)'
+            ]
+          },
+          {
+            id: 'bee-m4',
+            title: 'Module 4: Electrical Machines (DC & Induction)',
+            weightage: 20,
+            starred: false,
+            summary: 'DC motor torque equation & speed control, 3-phase induction motor rotating magnetic field, slip, and rotor frequency.',
+            formulas: [
+              'Slip: s = (N_s - N_r) / N_s | N_s = 120f / P',
+              'Rotor Frequency: f_r = s · f',
+              'DC Motor Back EMF: E_b = (P Φ Z N) / (60 A)'
+            ],
+            pyqs: [
+              'A 3-phase induction motor runs at 1440 rpm on 50 Hz. Find slip & rotor frequency. (2025 Dec Major)',
+              'Derive torque equation of a DC motor and explain speed control methods. (2024 Major)'
+            ]
+          }
+        ],
+        papers: [
+          { id: 'bee-p1', name: 'BEE Major 2025 Dec.pdf', type: 'Major', url: 'https://nexacad.pages.dev/pages/resources', solved: false },
+          { id: 'bee-p2', name: 'BEE Major 2025 Jan.pdf', type: 'Major', url: 'https://nexacad.pages.dev/pages/resources', solved: false },
+          { id: 'bee-p3', name: 'BEE Major 2024 Solution.pdf', type: 'Major', url: 'https://nexacad.pages.dev/pages/resources', solved: false },
+          { id: 'bee-p4', name: 'BEE Major 2024.pdf', type: 'Major', url: 'https://nexacad.pages.dev/pages/resources', solved: false },
+          { id: 'bee-p5', name: 'BEE Major 2023.pdf', type: 'Major', url: 'https://drive.google.com/file/d/1cojYLhO0__wUyo6TZagO0Vuo65n_PBeO/view', solved: false },
+          { id: 'bee-p6', name: 'BEE Minor 2026.pdf', type: 'Minor', url: 'https://nexacad.pages.dev/pages/resources', solved: false },
+          { id: 'bee-p7', name: 'BEE Minor 2025 Sept.jpg', type: 'Minor', url: 'https://nexacad.pages.dev/pages/resources', solved: false },
+          { id: 'bee-p8', name: 'BEE Minor 2024 Feb.pdf', type: 'Minor', url: 'https://nexacad.pages.dev/pages/resources', solved: false }
+        ]
+      },
+      {
+        id: 'cprog',
+        code: 'ES202',
+        name: 'Introduction to C Programming',
+        examDate: offsetDateISO(11),
+        dailyHours: 3,
+        modules: [
+          {
+            id: 'c-m1',
+            title: 'Module 1: Basics, Number Systems & Operators',
+            weightage: 30,
+            starred: true,
+            summary: 'Binary/Octal/Hexadecimal conversions, data types, operator precedence, bitwise operators, and conditional branching (if-else, switch).',
+            formulas: [
+              'Bitwise: & (AND), | (OR), ^ (XOR), << (left shift = ×2), >> (right shift = ÷2)',
+              'Ternary: condition ? expr1 : expr2',
+              '2’s Complement = 1’s Complement + 1'
+            ],
+            pyqs: [
+              'Convert decimal to binary/hex and write a C program for binary to decimal. (2025 Major ★)',
+              'Explain bitwise operators in C with truth tables and examples. (2024 Major ★)'
+            ]
+          },
+          {
+            id: 'c-m2',
+            title: 'Module 2: Loops, Arrays, Strings & Recursion',
+            weightage: 40,
+            starred: true,
+            summary: 'for/while/do-while loops, 1D & 2D matrix operations, string functions (strlen, strcpy, strcmp), user-defined functions, and recursion.',
+            formulas: [
+              'Recursion base case + recursive step (e.g. fact(n) = n * fact(n-1))',
+              'Matrix Mult: C[i][j] += A[i][k] * B[k][j]'
+            ],
+            pyqs: [
+              'Write a C program to multiply two matrices using 2D arrays. (2025 May Major ★)',
+              'Write recursive functions for Fibonacci series and factorial. (2024 Major ★)',
+              'Differentiate between while and do-while loops with syntax. (2026 Minor)'
+            ]
+          },
+          {
+            id: 'c-m3',
+            title: 'Module 3: Pointers, Structures & File Handling',
+            weightage: 30,
+            starred: true,
+            summary: 'Call by value vs call by reference, pointer arithmetic, struct vs union, dynamic memory allocation (malloc, calloc, free), and file I/O.',
+            formulas: [
+              'int *ptr = &x; (dereference: *ptr)',
+              'malloc(n * sizeof(int)) vs calloc(n, sizeof(int)) (zero-initialized)'
+            ],
+            pyqs: [
+              'Differentiate call by value vs call by reference with swap program using pointers. (2025 Dec Major ★)',
+              'Compare structure and union; explain malloc() and calloc(). (2024 Major ★)'
+            ]
+          }
+        ],
+        papers: [
+          { id: 'c-p1', name: 'C Major 2025 Dec.pdf', type: 'Major', url: 'https://nexacad.pages.dev/pages/resources', solved: false },
+          { id: 'c-p2', name: 'C Major 2025 May.pdf', type: 'Major', url: 'https://nexacad.pages.dev/pages/resources', solved: false },
+          { id: 'c-p3', name: 'C Major 2025 Jan.pdf', type: 'Major', url: 'https://nexacad.pages.dev/pages/resources', solved: false },
+          { id: 'c-p4', name: 'C Major 2023 Dec.pdf', type: 'Major', url: 'https://nexacad.pages.dev/pages/resources', solved: false },
+          { id: 'c-p5', name: 'C Major 2022.pdf', type: 'Major', url: 'https://nexacad.pages.dev/pages/resources', solved: false },
+          { id: 'c-p6', name: 'C Minor 2026.pdf', type: 'Minor', url: 'https://nexacad.pages.dev/pages/resources', solved: false },
+          { id: 'c-p7', name: 'C Minor 2024.pdf', type: 'Minor', url: 'https://nexacad.pages.dev/pages/resources', solved: false },
+          { id: 'c-p8', name: 'C Minor 2023 Set A.pdf', type: 'Minor', url: 'https://nexacad.pages.dev/pages/resources', solved: false }
+        ]
+      },
+      {
+        id: 'maths1',
+        code: 'MATH114',
+        name: 'Applied Mathematics 1',
+        examDate: offsetDateISO(14),
+        dailyHours: 3,
+        modules: [
+          {
+            id: 'm-m1',
+            title: 'Module 1: Matrices, Rank & Eigenvalues',
+            weightage: 35,
+            starred: true,
+            summary: 'Rank of matrix (Echelon/Normal form), consistency of linear systems (AX=B), eigenvalues & eigenvectors, and Cayley-Hamilton theorem.',
+            formulas: [
+              'Characteristic Eq: |A - λI| = 0',
+              'Consistency: Consistent iff rank(A) = rank([A|B])',
+              'Cayley-Hamilton: Every square matrix satisfies its own characteristic equation'
+            ],
+            pyqs: [
+              'Verify Cayley-Hamilton theorem for matrix A and find A⁻¹. (2025 Dec Major ★)',
+              'Find eigenvalues and eigenvectors of a 3×3 symmetric matrix. (2025 Jan Major ★)',
+              'Test consistency and solve system of linear equations using rank. (2024 Minor)'
+            ]
+          },
+          {
+            id: 'm-m2',
+            title: 'Module 2: Differential Calculus & Taylor Series',
+            weightage: 25,
+            starred: true,
+            summary: 'Successive differentiation, Leibnitz theorem, Rolle’s & Mean Value theorems, Taylor/Maclaurin series, and partial differentiation (Euler’s theorem).',
+            formulas: [
+              'Leibnitz: (uv)_n = Σ C(n,r) u_(n-r) v_r',
+              'Euler’s Theorem (degree n): x(∂u/∂x) + y(∂u/∂y) = n·u',
+              'Jacobian: J(u,v / x,y) = ∂(u,v)/∂(x,y)'
+            ],
+            pyqs: [
+              'State and verify Euler’s theorem for homogeneous functions. (2025 Dec Major ★)',
+              'Find nth derivative using Leibnitz theorem. (2023 Major ★)'
+            ]
+          },
+          {
+            id: 'm-m3',
+            title: 'Module 3: Integral Calculus, Beta & Gamma',
+            weightage: 20,
+            starred: false,
+            summary: 'Double & triple integrals, change of order of integration, Beta and Gamma functions, and volume/area applications.',
+            formulas: [
+              'Γ(n+1) = nΓ(n) | Γ(1/2) = √π',
+              'B(m,n) = Γ(m)Γ(n) / Γ(m+n)'
+            ],
+            pyqs: [
+              'Evaluate double integral by changing the order of integration. (2025 Jan Major)',
+              'Prove B(m,n) = Γ(m)Γ(n)/Γ(m+n) and evaluate integral. (2022 Major)'
+            ]
+          },
+          {
+            id: 'm-m4',
+            title: 'Module 4: Vector Calculus',
+            weightage: 20,
+            starred: true,
+            summary: 'Gradient, divergence, curl, directional derivative, and Green’s, Stokes’, and Gauss Divergence theorems.',
+            formulas: [
+              'Directional Derivative = ∇φ · n̂',
+              'Irrotational iff ∇ × F = 0 | Solenoidal iff ∇ · F = 0'
+            ],
+            pyqs: [
+              'Verify Gauss Divergence / Stokes theorem for a given vector field. (2025 Dec Major ★)'
+            ]
+          }
+        ],
+        papers: [
+          { id: 'm-p1', name: 'AM1 Major 2025 Dec.pdf', type: 'Major', url: 'https://nexacad.pages.dev/pages/resources', solved: false },
+          { id: 'm-p2', name: 'AM1 Major 2025 Jan.pdf', type: 'Major', url: 'https://nexacad.pages.dev/pages/resources', solved: false },
+          { id: 'm-p3', name: 'AM1 Major 2023.pdf', type: 'Major', url: 'https://nexacad.pages.dev/pages/resources', solved: false },
+          { id: 'm-p4', name: 'AM1 Major 2022.pdf', type: 'Major', url: 'https://nexacad.pages.dev/pages/resources', solved: false },
+          { id: 'm-p5', name: 'AM1 Minor 2025 Set A.jpg', type: 'Minor', url: 'https://nexacad.pages.dev/pages/resources', solved: false },
+          { id: 'm-p6', name: 'AM1 Minor 2024.pdf', type: 'Minor', url: 'https://nexacad.pages.dev/pages/resources', solved: false },
+          { id: 'm-p7', name: 'AM1 Minor 2023.pdf', type: 'Minor', url: 'https://nexacad.pages.dev/pages/resources', solved: false }
+        ]
+      },
+      {
+        id: 'chem',
+        code: 'CHEM136',
+        name: 'Engineering Chemistry',
+        examDate: offsetDateISO(18),
+        dailyHours: 3,
+        modules: [
+          {
+            id: 'ch-m1',
+            title: 'Module 1: Water Technology & Softening',
+            weightage: 40,
+            starred: true,
+            summary: 'Hardness of water (CaCO₃ equivalents), EDTA titration numericals, boiler troubles (scale, sludge, priming, foaming, caustic embrittlement), Lime-Soda, Zeolite & Ion-Exchange.',
+            formulas: [
+              'CaCO₃ eq = (Mass of impurity × 50) / Eq. wt of impurity',
+              'Hardness (ppm): 1 mg/L = 1 ppm = 0.07 °Cl = 0.1 °Fr',
+              'EDTA: M₁V₁ = M₂V₂ (1 mol EDTA ≡ 1 mol CaCO₃)'
+            ],
+            pyqs: [
+              'Explain EDTA method for total, temporary, and permanent hardness + numerical. (2025 Dec Major ★)',
+              'What are boiler troubles? Differentiate scale vs sludge and priming vs foaming. (2024 Apr Major ★)',
+              'Explain Zeolite and Ion-exchange water softening with regeneration reactions. (2025 Oct Minor ★)'
+            ]
+          },
+          {
+            id: 'ch-m2',
+            title: 'Module 2: Electrochemistry & Corrosion',
+            weightage: 30,
+            starred: true,
+            summary: 'Nernst equation, galvanic cells, electrochemical theory of wet corrosion, waterline/pitting corrosion, and cathodic protection (sacrificial anode).',
+            formulas: [
+              'Nernst Eq (298K): E = E° - (0.0591 / n) log([Products]/[Reactants])',
+              'Cell EMF: E_cell = E_cathode - E_anode'
+            ],
+            pyqs: [
+              'Derive Nernst equation for single electrode potential + numerical. (2025 Dec Major ★)',
+              'Explain electrochemical theory of corrosion with anodic/cathodic reactions. (2024 Apr Major ★)'
+            ]
+          },
+          {
+            id: 'ch-m3',
+            title: 'Module 3: Fuels, Calorimetry & Polymers',
+            weightage: 30,
+            starred: true,
+            summary: 'Gross & Net Calorific Value (GCV/NCV), Bomb Calorimeter numericals, Dulong’s formula, Octane/Cetane numbers, Bakelite, Nylon-6,6 & biodegradable polymers.',
+            formulas: [
+              'GCV = ((W + w) × ΔT × s) / m',
+              'NCV = GCV - 0.09 × %H × 587 (kcal/kg)',
+              'Dulong: GCV = (1/100)[8080 C + 34500(H - O/8) + 2240 S]'
+            ],
+            pyqs: [
+              'Describe Bomb Calorimeter for GCV & NCV determination + numerical. (2025 Dec Major ★)',
+              'Write synthesis and uses of Bakelite and Nylon-6,6. (2023 Nov Major)'
+            ]
+          }
+        ],
+        papers: [
+          { id: 'ch-p1', name: 'Engineering Chem Major 2025 Dec.pdf', type: 'Major', url: 'https://nexacad.pages.dev/pages/resources', solved: false },
+          { id: 'ch-p2', name: 'Engineering Chem Major 2024 Apr.pdf', type: 'Major', url: 'https://nexacad.pages.dev/pages/resources', solved: false },
+          { id: 'ch-p3', name: 'Engineering Chem Major 2023 Nov.pdf', type: 'Major', url: 'https://nexacad.pages.dev/pages/resources', solved: false },
+          { id: 'ch-p4', name: 'Engineering Chem Major 2023 Apr.pdf', type: 'Major', url: 'https://nexacad.pages.dev/pages/resources', solved: false },
+          { id: 'ch-p5', name: 'Engineering Chem Minor 2026 Feb.pdf', type: 'Minor', url: 'https://nexacad.pages.dev/pages/resources', solved: false },
+          { id: 'ch-p6', name: 'Engineering Chem Minor 2025 Oct.jpg', type: 'Minor', url: 'https://nexacad.pages.dev/pages/resources', solved: false },
+          { id: 'ch-p7', name: 'Engineering Chem Minor 2024 Feb.pdf', type: 'Minor', url: 'https://nexacad.pages.dev/pages/resources', solved: false }
+        ]
+      }
+    ];
+
+    let state = loadState();
+    let chartInstance = null;
+
+    function buildDefaultState() {
+      const progress = {};
+      SUBJECTS_DATA.forEach(s => {
+        progress[s.id] = {
+          examDate: s.examDate,
+          dailyHours: s.dailyHours,
+          solvedPapers: {},
+          roadmapDone: {},
+          roadmap: []
+        };
+      });
+      const st = {
+        activeSubjectId: 'bee',
+        activeTab: 'study',
+        selectedModuleId: 'all',
+        progress
+      };
+      SUBJECTS_DATA.forEach(s => {
+        st.progress[s.id].roadmap = generateRoadmap(s, st.progress[s.id]);
+      });
+      return st;
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.progress) return parsed;
+        }
+      } catch (e) {}
+      return buildDefaultState();
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (e) {}
+    }
+
+    function getActiveSubject() {
+      return SUBJECTS_DATA.find(s => s.id === state.activeSubjectId) || SUBJECTS_DATA[0];
+    }
+
+    function getSubjectProgress(subjId) {
+      return state.progress[subjId];
+    }
+
+    function getDaysLeft(examDateStr) {
+      if (!examDateStr) return 0;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const exam = new Date(examDateStr + 'T00:00:00');
+      return Math.max(0, Math.ceil((exam - today) / (1000 * 60 * 60 * 24)));
+    }
+
+    function generateRoadmap(subject, prog) {
+      const daysLeft = Math.max(1, getDaysLeft(prog.examDate));
+      const totalDays = Math.min(daysLeft, 30);
+      const revisionDays = totalDays >= 4 ? 2 : (totalDays >= 2 ? 1 : 0);
+      const studyDays = Math.max(1, totalDays - revisionDays);
+
+      const sortedMods = [...subject.modules].sort((a, b) => b.weightage - a.weightage);
+      const totalWeight = sortedMods.reduce((acc, m) => acc + m.weightage, 0);
+      const roadmap = [];
+      let dayNum = 1;
+      let assigned = 0;
+
+      sortedMods.forEach((m, idx) => {
+        if (dayNum > studyDays) return;
+        let alloc = idx === sortedMods.length - 1
+          ? (studyDays - assigned)
+          : Math.max(1, Math.round((m.weightage / totalWeight) * studyDays));
+        alloc = Math.min(alloc, studyDays - assigned);
+        if (alloc <= 0 && assigned < studyDays) alloc = 1;
+
+        for (let i = 0; i < alloc && dayNum <= studyDays; i++) {
+          const part = alloc > 1 ? ` (Part ${i + 1}/${alloc})` : '';
+          roadmap.push({
+            id: `d-${dayNum}`,
+            day: dayNum,
+            date: offsetDateISO(dayNum - 1),
+            title: `${m.title}${part}`,
+            focus: `Weightage: ${m.weightage}% • Practice starred PYQs & formulas`,
+            hours: prog.dailyHours || 3
+          });
+          dayNum++;
+          assigned++;
+        }
+      });
+
+      for (let r = 0; r < revisionDays; r++) {
+        roadmap.push({
+          id: `d-${dayNum}`,
+          day: dayNum,
+          date: offsetDateISO(dayNum - 1),
+          title: r === revisionDays - 1 ? 'Full Nexacad Major PYQ Mock + Formula Revision' : 'Timed Minor/Major PYQ Solving',
+          focus: `Solve ${subject.papers[0]?.name || 'past papers'} under exam timing`,
+          hours: prog.dailyHours || 3
+        });
+        dayNum++;
+      }
+
+      return roadmap;
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.remove('opacity-0');
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(() => t.classList.add('opacity-0'), 2400);
+    }
+
+    function renderAll() {
+      const subject = getActiveSubject();
+      const prog = getSubjectProgress(subject.id);
+      renderSubjectTabs();
+      renderSubjectBanner(subject, prog);
+      renderTabButtons();
+      renderStudyView(subject);
+      renderPapersView(subject, prog);
+      renderRoadmapView(subject, prog);
+    }
+
+    function renderSubjectTabs() {
+      const el = document.getElementById('subjectTabs');
+      el.innerHTML = SUBJECTS_DATA.map(s => {
+        const active = s.id === state.activeSubjectId;
+        const days = getDaysLeft(getSubjectProgress(s.id).examDate);
+        return `
+          <button data-subj-id="${s.id}" class="shrink-0 px-3.5 py-2 rounded-lg text-xs font-medium border transition flex items-center gap-2 ${
+            active
+              ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+              : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+          }">
+            <span class="font-semibold">${escapeHtml(s.name)}</span>
+            <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${
+              active ? 'bg-indigo-500 text-white' : (days <= 7 ? 'bg-amber-100 text-amber-800' : 'bg-slate-200 text-slate-700')
+            }">${days}d</span>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function renderSubjectBanner(subject, prog) {
+      const days = getDaysLeft(prog.examDate);
+      const solved = Object.values(prog.solvedPapers || {}).filter(Boolean).length;
+      const doneDays = Object.values(prog.roadmapDone || {}).filter(Boolean).length;
+
+      document.getElementById('subjectBanner').innerHTML = `
+        <div class="flex flex-col gap-1">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-indigo-50 text-indigo-700">${escapeHtml(subject.code)}</span>
+            <h2 class="text-lg sm:text-xl font-bold text-slate-900">${escapeHtml(subject.name)}</h2>
+          </div>
+          <p class="text-xs text-slate-500">${subject.modules.length} modules &bull; ${solved}/${subject.papers.length} Nexacad papers solved &bull; ${doneDays}/${prog.roadmap.length} roadmap days done</p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3">
+          <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+            <label class="text-xs text-slate-500 font-medium">Paper Date:</label>
+            <input id="bannerExamDate" type="date" value="${prog.examDate}" class="text-xs font-semibold text-slate-800 bg-transparent focus:outline-none" />
+          </div>
+          <div class="px-3.5 py-2 rounded-xl text-center ${days <= 7 ? 'bg-amber-50 border border-amber-200 text-amber-800' : 'bg-indigo-50 border border-indigo-200 text-indigo-700'}">
+            <div class="text-base font-bold leading-tight">${days} ${days === 1 ? 'Day' : 'Days'}</div>
+            <div class="text-[10px] uppercase tracking-wide font-semibold">Left for Paper</div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('bannerExamDate').addEventListener('change', e => {
+        prog.examDate = e.target.value;
+        prog.roadmap = generateRoadmap(subject, prog);
+        saveState();
+        renderAll();
+        showToast('Paper date updated & roadmap recalculated');
+      });
+    }
+
+    function renderTabButtons() {
+      const views = ['study', 'papers', 'roadmap'];
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        const active = btn.dataset.tab === state.activeTab;
+        btn.className = `tab-btn px-3.5 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition whitespace-nowrap ${
+          active ? 'bg-white text-indigo-700 shadow-sm font-semibold' : 'text-slate-600 hover:text-slate-900'
+        }`;
+      });
+      views.forEach(v => {
+        const el = document.getElementById(`view-${v}`);
+        if (v === state.activeTab) {
+          el.classList.remove('hidden');
+          if (v !== 'study') el.classList.add('flex');
+        } else {
+          el.classList.add('hidden');
+          el.classList.remove('flex');
+        }
+      });
+    }
+
+    function renderStudyView(subject) {
+      const select = document.getElementById('moduleFilterSelect');
+      select.innerHTML = `<option value="all">All Modules (${subject.modules.length})</option>` +
+        subject.modules.map(m => `<option value="${m.id}">${escapeHtml(m.title)}</option>`).join('');
+      select.value = subject.modules.some(m => m.id === state.selectedModuleId) ? state.selectedModuleId : 'all';
+
+      const modsToShow = select.value === 'all'
+        ? subject.modules
+        : subject.modules.filter(m => m.id === select.value);
+
+      document.getElementById('modulesFeed').innerHTML = modsToShow.map(m => `
+        <div class="p-4 rounded-xl border ${m.starred ? 'border-indigo-200 bg-indigo-50/20' : 'border-slate-200 bg-slate-50/40'} flex flex-col gap-2.5">
+          <div class="flex items-start justify-between gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
+              ${m.starred ? '<span class="text-amber-500 text-sm" title="High-Yield Module">&#9733;</span>' : ''}
+              <h3 class="text-sm font-bold text-slate-900">${escapeHtml(m.title)}</h3>
+            </div>
+            <span class="shrink-0 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">${m.weightage}% weight</span>
+          </div>
+          <p class="text-xs text-slate-600 leading-relaxed">${escapeHtml(m.summary)}</p>
+          <div class="bg-white rounded-lg border border-slate-200 p-2.5">
+            <div class="text-[11px] font-semibold text-slate-700 mb-1">Key Formulas &amp; Concepts</div>
+            <ul class="text-xs text-slate-600 space-y-1 font-mono">
+              ${m.formulas.map(f => `<li>&bull; ${escapeHtml(f)}</li>`).join('')}
+            </ul>
+          </div>
+          <div>
+            <div class="text-[11px] font-semibold text-slate-700 mb-1">Nexacad PYQ Highlights</div>
+            <ul class="text-xs text-slate-700 space-y-1">
+              ${m.pyqs.map(q => `<li class="pl-2.5 border-l-2 border-amber-400">${escapeHtml(q)}</li>`).join('')}
+            </ul>
+          </div>
+        </div>
+      `).join('');
+
+      const chat = document.getElementById('chatFeed');
+      if (chat.dataset.subj !== subject.id) {
+        chat.dataset.subj = subject.id;
+        chat.innerHTML = `
+          <div class="bg-white border border-slate-200 rounded-xl p-3 text-xs text-slate-700 leading-relaxed">
+            <div class="font-semibold text-indigo-700 mb-1">${escapeHtml(subject.name)} (${escapeHtml(subject.code)}) Ready</div>
+            All <strong>${subject.modules.length} modules</strong> and <strong>${subject.papers.length} Nexacad papers</strong> are loaded. Tap <strong>Formula Sheet</strong>, <strong>&#9733; Must-Do PYQs</strong>, or search any topic below.
+          </div>
+        `;
+      }
+    }
+
+    function appendChat(html, isUser = false) {
+      const feed = document.getElementById('chatFeed');
+      const div = document.createElement('div');
+      div.className = isUser
+        ? 'self-end max-w-[85%] bg-indigo-600 text-white rounded-xl px-3.5 py-2 text-xs'
+        : 'bg-white border border-slate-200 rounded-xl p-3 text-xs text-slate-700 leading-relaxed';
+      div.innerHTML = html;
+      feed.appendChild(div);
+      feed.scrollTop = feed.scrollHeight;
+    }
+
+    function runStudioAction(action) {
+      const subject = getActiveSubject();
+      if (action === 'formulas') {
+        const html = subject.modules.map(m => `
+          <div class="mb-2 last:mb-0">
+            <div class="font-semibold text-indigo-700">${escapeHtml(m.title)}</div>
+            <ul class="font-mono text-[11px] text-slate-700 mt-0.5 space-y-0.5">
+              ${m.formulas.map(f => `<li>&bull; ${escapeHtml(f)}</li>`).join('')}
+            </ul>
+          </div>
+        `).join('');
+        appendChat(`<div class="font-bold text-slate-900 mb-1.5">Complete Formula Sheet</div>${html}`);
+      } else if (action === 'starred') {
+        const starred = subject.modules.flatMap(m => m.pyqs.filter(q => q.includes('★')));
+        const html = starred.map(q => `<li class="py-1 border-b border-slate-100 last:border-0">${escapeHtml(q)}</li>`).join('');
+        appendChat(`<div class="font-bold text-slate-900 mb-1.5">&#9733; Must-Do High-Frequency PYQs</div><ul class="list-none">${html}</ul>`);
+      } else if (action === 'quiz') {
+        const allPyqs = subject.modules.flatMap(m => m.pyqs);
+        const picked = [...allPyqs].sort(() => 0.5 - Math.random()).slice(0, 3);
+        const html = picked.map((q, i) => `<div class="p-2 bg-slate-50 rounded-lg border border-slate-200 mb-1.5 last:mb-0">${i + 1}. ${escapeHtml(q)}</div>`).join('');
+        appendChat(`<div class="font-bold text-slate-900 mb-1.5">Quick 3-Question Self-Test</div>${html}`);
+      }
+    }
+
+    function renderPapersView(subject, prog) {
+      const ctx = document.getElementById('weightageChart').getContext('2d');
+      if (chartInstance) chartInstance.destroy();
+      chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: subject.modules.map(m => m.title.replace(/^Module \d+:\s*/i, '')),
+          datasets: [{
+            label: 'Estimated Exam Weightage (%)',
+            data: subject.modules.map(m => m.weightage),
+            backgroundColor: 'rgba(79, 70, 229, 0.85)',
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, max: 50, grid: { color: '#f1f5f9' } },
+            x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+          }
+        }
+      });
+
+      const solvedMap = prog.solvedPapers || {};
+      const solvedCount = subject.papers.filter(p => solvedMap[p.id]).length;
+      document.getElementById('papersSolvedBadge').textContent = `${solvedCount}/${subject.papers.length} solved`;
+
+      document.getElementById('nexacadPapersList').innerHTML = subject.papers.map(p => {
+        const done = !!solvedMap[p.id];
+        return `
+          <div class="flex items-center justify-between gap-2 p-2.5 rounded-lg border ${done ? 'bg-emerald-50/50 border-emerald-200' : 'bg-slate-50 border-slate-200'}">
+            <label class="flex items-center gap-2.5 cursor-pointer min-w-0 flex-1">
+              <input type="checkbox" data-paper-toggle="${p.id}" ${done ? 'checked' : ''} class="rounded text-indigo-600 focus:ring-indigo-500" />
+              <span class="text-xs font-medium truncate ${done ? 'line-through text-slate-400' : 'text-slate-800'}">${escapeHtml(p.name)}</span>
+            </label>
+            <a href="${p.url}" target="_blank" rel="noopener noreferrer" class="shrink-0 text-[11px] font-semibold px-2 py-1 rounded ${p.type === 'Major' ? 'bg-indigo-50 text-indigo-700' : 'bg-amber-50 text-amber-800'} hover:opacity-80 transition">${p.type} &nearr;</a>
+          </div>
+        `;
+      }).join('');
+
+      const sorted = [...subject.modules].sort((a, b) => b.weightage - a.weightage);
+      document.getElementById('priorityTableBody').innerHTML = sorted.map(m => {
+        const badge = m.weightage >= 30 ? ['High', 'bg-red-50 text-red-700'] : (m.weightage >= 25 ? ['Medium', 'bg-amber-50 text-amber-800'] : ['Normal', 'bg-slate-100 text-slate-700']);
+        return `
+          <tr>
+            <td class="py-2.5 pr-3 font-medium text-slate-800">${escapeHtml(m.title)}</td>
+            <td class="py-2.5 px-3 font-semibold text-indigo-700">${m.weightage}%</td>
+            <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded-full text-[11px] font-semibold ${badge[1]}">${badge[0]}</span></td>
+            <td class="py-2.5 pl-3 text-xs text-slate-500">${escapeHtml(m.summary)}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderRoadmapView(subject, prog) {
+      document.getElementById('dailyHoursInput').value = prog.dailyHours || 3;
+      const doneMap = prog.roadmapDone || {};
+      const doneCount = prog.roadmap.filter(r => doneMap[r.id]).length;
+      const total = prog.roadmap.length;
+      const pct = total > 0 ? Math.round((doneCount / total) * 100) : 0;
+
+      document.getElementById('roadmapProgressText').textContent = `${doneCount} / ${total} days (${pct}%)`;
+      document.getElementById('roadmapProgressBar').style.width = `${pct}%`;
+
+      document.getElementById('roadmapList').innerHTML = prog.roadmap.map(item => {
+        const done = !!doneMap[item.id];
+        return `
+          <label class="flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition ${
+            done ? 'bg-emerald-50/60 border-emerald-200' : 'bg-white border-slate-200 hover:border-indigo-300'
+          }">
+            <input type="checkbox" data-roadmap-toggle="${item.id}" ${done ? 'checked' : ''} class="mt-1 rounded text-indigo-600 focus:ring-indigo-500" />
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-2 mb-1">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-indigo-600">Day ${item.day} &bull; ${item.date}</span>
+                <span class="text-[11px] font-medium px-2 py-0.5 rounded bg-slate-100 text-slate-600">${item.hours} hrs</span>
+              </div>
+              <div class="text-sm font-semibold ${done ? 'line-through text-slate-400' : 'text-slate-900'}">${escapeHtml(item.title)}</div>
+              <div class="text-xs text-slate-500 mt-1">${escapeHtml(item.focus)}</div>
+            </div>
+          </label>
+        `;
+      }).join('');
+    }
+
+    // Event Listeners
+    document.getElementById('subjectTabs').addEventListener('click', e => {
+      const btn = e.target.closest('[data-subj-id]');
+      if (!btn) return;
+      state.activeSubjectId = btn.dataset.subjId;
+      state.selectedModuleId = 'all';
+      saveState();
+      renderAll();
+    });
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.activeTab = btn.dataset.tab;
+        saveState();
+        renderTabButtons();
+        if (state.activeTab === 'papers') {
+          const s = getActiveSubject();
+          renderPapersView(s, getSubjectProgress(s.id));
+        }
+      });
+    });
+
+    document.getElementById('moduleFilterSelect').addEventListener('change', e => {
+      state.selectedModuleId = e.target.value;
+      saveState();
+      renderStudyView(getActiveSubject());
+    });
+
+    document.querySelectorAll('.studio-btn').forEach(btn => {
+      btn.addEventListener('click', () => runStudioAction(btn.dataset.action));
+    });
+
+    document.getElementById('studyQueryForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const inp = document.getElementById('studyQueryInput');
+      const q = inp.value.trim();
+      if (!q) return;
+      inp.value = '';
+      appendChat(escapeHtml(q), true);
+
+      const subject = getActiveSubject();
+      const terms = q.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+      const matches = [];
+
+      subject.modules.forEach(m => {
+        const hay = `${m.title} ${m.summary} ${m.formulas.join(' ')} ${m.pyqs.join(' ')}`.toLowerCase();
+        if (terms.some(t => hay.includes(t))) {
+          matches.push(m);
+        }
+      });
+
+      if (matches.length === 0) {
+        appendChat(`No direct match for "<strong>${escapeHtml(q)}</strong>" in ${escapeHtml(subject.name)}. Try keywords from your modules or tap <strong>Formula Sheet</strong>.`);
+      } else {
+        const html = matches.map(m => `
+          <div class="mb-2 last:mb-0 pb-2 border-b border-slate-100 last:border-0">
+            <div class="font-semibold text-indigo-700">${escapeHtml(m.title)}</div>
+            <div class="text-slate-600 mt-0.5">${escapeHtml(m.summary)}</div>
+            <div class="mt-1 text-[11px] font-medium text-amber-800">PYQ: ${escapeHtml(m.pyqs[0])}</div>
+          </div>
+        `).join('');
+        appendChat(html);
+      }
+    });
+
+    document.getElementById('nexacadPapersList').addEventListener('change', e => {
+      const cb = e.target.closest('[data-paper-toggle]');
+      if (!cb) return;
+      const s = getActiveSubject();
+      const prog = getSubjectProgress(s.id);
+      prog.solvedPapers[cb.dataset.paperToggle] = cb.checked;
+      saveState();
+      renderAll();
+    });
+
+    document.getElementById('roadmapList').addEventListener('change', e => {
+      const cb = e.target.closest('[data-roadmap-toggle]');
+      if (!cb) return;
+      const s = getActiveSubject();
+      const prog = getSubjectProgress(s.id);
+      prog.roadmapDone[cb.dataset.roadmapToggle] = cb.checked;
+      saveState();
+      renderAll();
+    });
+
+    document.getElementById('btnRegenerateRoadmap').addEventListener('click', () => {
+      const s = getActiveSubject();
+      const prog = getSubjectProgress(s.id);
+      prog.dailyHours = parseFloat(document.getElementById('dailyHoursInput').value) || 3;
+      prog.roadmap = generateRoadmap(s, prog);
+      prog.roadmapDone = {};
+      saveState();
+      renderAll();
+      showToast('Countdown roadmap regenerated');
+    });
+
+    document.getElementById('btnResetProgress').addEventListener('click', () => {
+      state = buildDefaultState();
+      saveState();
+      renderAll();
+      showToast('Progress reset');
+    });
+
+    renderAll();
+  </script>
+</body>
+</html>
