@@ -112,7 +112,7 @@ function detectTopics(text){
  const lines=raw.split('\\n').map(x=>x.replace(/\\s+/g,' ').replace(/^[•●▪◦*-]+\\s*/,'').trim()).filter(x=>x.length>2&&x.length<180);
  const moduleRe=/^(unit|module|chapter|part)\\s*(?:(?:no\\.?\\s*)?([ivxlcdm]+|\\d+))?\\s*[:.)\\-–—]?\\s*(.*)$/i;
  const numberedRe=/^(\\d+(?:\\.\\d+){0,3})\\s*[.)-:]\\s*(.{3,})$/;
- const keywordRe=/^(introduction to|basics of|fundamentals of|overview of|network theorems|transformers|chemical|differential|integral|arrays|pointers| Ohm'?s law)/i;
+ const keywordRe=/^(introduction to|basics of|fundamentals of|overview of|network theorems|transformers|chemical|differential|integral|arrays|pointers|Ohm'?s law)/i;
  const output=[],seen=new Set();
  for(let line of lines){
   line=line.replace(/\\s{2,}/g,' ').trim();
