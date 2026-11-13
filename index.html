@@ -82,16 +82,16 @@ function showTopic(){const s=subject(),t=s.topics[Number(selectedTopic)];documen
 function pdfItemsToLines(items){
  const lines=[];let current='',currentY=null;
  for(const item of items){
-  const value=String(item.str||'').replace(/\\s+/g,' ').trim();if(!value)continue;
+  const value=String(item.str||'').replace(/\s+/g,' ').trim();if(!value)continue;
   const y=Array.isArray(item.transform)?item.transform[5]:null;
   if(current&&y!==null&&currentY!==null&&Math.abs(y-currentY)>2.5){lines.push(current.trim());current=''}
-  if(current&& !/[\\s-]$/.test(current))current+=' ';
+  if(current&&!/[\s-]$/.test(current))current+=' ';
   current+=value;
   if(y!==null)currentY=y;
   if(item.hasEOL){lines.push(current.trim());current='';currentY=null}
  }
  if(current.trim())lines.push(current.trim());
- return lines.join('\\n');
+ return lines.join('\n');
 }
 async function extract(file){
  const ext=file.name.split('.').pop().toLowerCase();
@@ -100,7 +100,7 @@ async function extract(file){
   if(!window.pdfjsLib)throw Error('PDF reader library did not load');
   pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;let out='';
-  for(let p=1;p<=pdf.numPages;p++){const page=await pdf.getPage(p),c=await page.getTextContent();out+='\\n'+pdfItemsToLines(c.items)}
+  for(let p=1;p<=pdf.numPages;p++){const page=await pdf.getPage(p),c=await page.getTextContent();out+='\n'+pdfItemsToLines(c.items)}
   return out;
  }
  if(ext==='docx'){if(!window.mammoth)throw Error('DOCX reader library did not load');return(await mammoth.extractRawText({arrayBuffer:await file.arrayBuffer()})).value}
@@ -108,15 +108,15 @@ async function extract(file){
  throw Error('Unsupported file type');
 }
 function detectTopics(text){
- const raw=String(text||'').replace(/\\r/g,'\\n').replace(/[\\u00a0\\t]+/g,' ');
- const lines=raw.split('\\n').map(x=>x.replace(/\\s+/g,' ').replace(/^[•●▪◦*-]+\\s*/,'').trim()).filter(x=>x.length>2&&x.length<180);
- const moduleRe=/^(unit|module|chapter|part)\\s*(?:(?:no\\.?\\s*)?([ivxlcdm]+|\\d+))?\\s*[:.)\\-–—]?\\s*(.*)$/i;
- const numberedRe=/^(\\d+(?:\\.\\d+){0,3})\\s*[.)-:]\\s*(.{3,})$/;
+ const raw=String(text||'').replace(/\r/g,'\n').replace(/[\u00a0\t]+/g,' ');
+ const lines=raw.split('\n').map(x=>x.replace(/\s+/g,' ').replace(/^[•●▪◦*-]+\s*/,'').trim()).filter(x=>x.length>2&&x.length<180);
+ const moduleRe=/^(unit|module|chapter|part)\s*(?:(?:no\.?\s*)?([ivxlcdm]+|\d+))?\s*[:.)\-–—]?\s*(.*)$/i;
+ const numberedRe=/^(\d+(?:\.\d+){0,3})\s*[.)\-:]\s*(.{3,})$/;
  const keywordRe=/^(introduction to|basics of|fundamentals of|overview of|network theorems|transformers|chemical|differential|integral|arrays|pointers|Ohm'?s law)/i;
  const output=[],seen=new Set();
  for(let line of lines){
-  line=line.replace(/\\s{2,}/g,' ').trim();
-  if(/^(page\\s+\\d+|\\d+\\s*\\/\\s*\\d+|university syllabus|course outcomes?)$/i.test(line))continue;
+  line=line.replace(/\s{2,}/g,' ').trim();
+  if(/^(page\s+\d+|\d+\s*\/\s*\d+|university syllabus|course outcomes?)$/i.test(line))continue;
   const mod=line.match(moduleRe),num=line.match(numberedRe);
   let candidate='';
   if(mod){
@@ -131,7 +131,7 @@ function detectTopics(text){
   }else if(line===line.toUpperCase()&&/[A-Z]{4}/.test(line)&&line.length<100){
    candidate=line;
   }
-  candidate=candidate.replace(/\\s+/g,' ').trim();
+  candidate=candidate.replace(/\s+/g,' ').trim();
   if(candidate.length<3)continue;
   const key=candidate.toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
   if(!seen.has(key)){seen.add(key);output.push(candidate)}
