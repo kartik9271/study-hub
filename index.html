@@ -79,8 +79,66 @@ function renderSubjects(){const sel=document.getElementById('subjectSelect');con
 function renderSyllabus(){renderSubjects();const s=subject();document.getElementById('fileStatus').innerHTML=data.files.filter(f=>f.subjectId===s.id).map(f=>'<div class="border border-slate-200 rounded-xl p-3 flex justify-between gap-3 text-xs"><div><b>'+esc(f.name)+'</b><div class="muted mt-1">'+esc(f.status)+'</div></div><span class="pill">'+esc(f.type)+'</span></div>').join('');document.getElementById('topicEditor').innerHTML=s.topics.length?s.topics.map((t,i)=>'<div class="flex gap-2 items-center"><span class="text-xs muted w-6">'+(i+1)+'.</span><input data-topic="'+i+'" class="border border-slate-200 rounded-lg px-3 py-2 text-sm flex-1" value="'+esc(t)+'"><button class="text-red-500 text-xs px-2" data-remove="'+i+'">Remove</button></div>').join(''):'<div class="text-sm muted border border-dashed rounded-xl p-6 text-center">No topics yet. Upload a syllabus or add topics manually.</div>'}
 function renderWorkspace(){renderSubjects();const s=subject();const ts=document.getElementById('topicSelect');ts.innerHTML=s.topics.length?s.topics.map((t,i)=>'<option value="'+i+'">'+esc(t)+'</option>').join(''):'<option value="">No approved topics yet</option>';if(selectedTopic!==''&&Number(selectedTopic)<s.topics.length)ts.value=selectedTopic;selectedTopic=ts.value;showTopic()}
 function showTopic(){const s=subject(),t=s.topics[Number(selectedTopic)];document.getElementById('workspaceSubject').textContent=s.code+' · '+s.name;document.getElementById('workspaceTopic').textContent=t||'Approve topics in Syllabus Manager first';document.getElementById('topicNotes').value=t?(data.notes[s.id+'::'+t]||''):'';document.getElementById('topicMeta').innerHTML=['Concept learning','Exam preparation','Practice & revision'].map(x=>'<div class="rounded-xl bg-slate-50 p-3 text-xs font-semibold">'+x+'</div>').join('')}
-async function extract(file){const ext=file.name.split('.').pop().toLowerCase();if(ext==='txt')return await file.text();if(ext==='pdf'){if(!window.pdfjsLib)throw Error('PDF reader library did not load');pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;let out='';for(let p=1;p<=pdf.numPages;p++){const page=await pdf.getPage(p),c=await page.getTextContent();out+='\n'+c.items.map(x=>x.str).join(' ')}return out}if(ext==='docx'){if(!window.mammoth)throw Error('DOCX reader library did not load');return(await mammoth.extractRawText({arrayBuffer:await file.arrayBuffer()})).value}if(['png','jpg','jpeg'].includes(ext)){if(!window.Tesseract)throw Error('OCR library did not load');const r=await Tesseract.recognize(file,'eng');return r.data.text}throw Error('Unsupported file type')}
-function detectTopics(text){const lines=text.split(/\r?\n/).map(x=>x.replace(/\s+/g,' ').trim()).filter(x=>x.length>3&&x.length<150);const candidates=lines.filter(x=>/^(unit|module|chapter|syllabus|\d+(\.\d+)*[.)]?\s+)/i.test(x)||/^(introduction to|basics of|fundamentals of|network theorems|transformers|chemical|differential|integral|arrays|pointers)/i.test(x));return [...new Set(candidates.map(x=>x.replace(/^\d+(\.\d+)*[.)]?\s*/, '').trim()).filter(x=>x.length>2))].slice(0,80)}
+function pdfItemsToLines(items){
+ const lines=[];let current='',currentY=null;
+ for(const item of items){
+  const value=String(item.str||'').replace(/\s+/g,' ').trim();if(!value)continue;
+  const y=Array.isArray(item.transform)?item.transform[5]:null;
+  if(current&&y!==null&&currentY!==null&&Math.abs(y-currentY)>2.5){lines.push(current.trim());current=''}
+  if(current&&!/[\s-]$/.test(current))current+=' ';
+  current+=value;
+  if(y!==null)currentY=y;
+  if(item.hasEOL){lines.push(current.trim());current='';currentY=null}
+ }
+ if(current.trim())lines.push(current.trim());
+ return lines.join('\n');
+}
+async function extract(file){
+ const ext=file.name.split('.').pop().toLowerCase();
+ if(ext==='txt')return await file.text();
+ if(ext==='pdf'){
+  if(!window.pdfjsLib)throw Error('PDF reader library did not load');
+  pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;let out='';
+  for(let p=1;p<=pdf.numPages;p++){const page=await pdf.getPage(p),c=await page.getTextContent();out+='\n'+pdfItemsToLines(c.items)}
+  return out;
+ }
+ if(ext==='docx'){if(!window.mammoth)throw Error('DOCX reader library did not load');return(await mammoth.extractRawText({arrayBuffer:await file.arrayBuffer()})).value}
+ if(['png','jpg','jpeg'].includes(ext)){if(!window.Tesseract)throw Error('OCR library did not load');const r=await Tesseract.recognize(file,'eng');return r.data.text}
+ throw Error('Unsupported file type');
+}
+function detectTopics(text){
+ const raw=String(text||'').replace(/\r/g,'\n').replace(/[\u00a0\t]+/g,' ');
+ const lines=raw.split('\n').map(x=>x.replace(/\s+/g,' ').replace(/^[•●▪◦*-]+\s*/,'').trim()).filter(x=>x.length>2&&x.length<180);
+ const moduleRe=/^(unit|module|chapter|part)\s*(?:(?:no\.?\s*)?([ivxlcdm]+|\d+))?\s*[:.)\-–—]?\s*(.*)$/i;
+ const numberedRe=/^(\d+(?:\.\d+){0,3})\s*[.)\-:]\s*(.{3,})$/;
+ const keywordRe=/^(introduction to|basics of|fundamentals of|overview of|network theorems|transformers|chemical|differential|integral|arrays|pointers|Ohm'?s law)/i;
+ const output=[],seen=new Set();
+ for(let line of lines){
+  line=line.replace(/\s{2,}/g,' ').trim();
+  if(/^(page\s+\d+|\d+\s*\/\s*\d+|university syllabus|course outcomes?)$/i.test(line))continue;
+  const mod=line.match(moduleRe),num=line.match(numberedRe);
+  let candidate='';
+  if(mod){
+   const label=mod[1][0].toUpperCase()+mod[1].slice(1);
+   const number=mod[2]?' '+mod[2]:'';
+   const heading=mod[3].trim();
+   candidate=label+number+(heading?' — '+heading:'');
+  }else if(num){
+   candidate=num[1]+'. '+num[2].trim();
+  }else if(keywordRe.test(line)){
+   candidate=line;
+  }else if(line===line.toUpperCase()&&/[A-Z]{4}/.test(line)&&line.length<100){
+   candidate=line;
+  }
+  candidate=candidate.replace(/\s+/g,' ').trim();
+  if(candidate.length<3)continue;
+  const key=candidate.toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+  if(!seen.has(key)){seen.add(key);output.push(candidate)}
+  if(output.length>=100)break;
+ }
+ return output;
+}
 async function handleFiles(files){const s=subject();for(const file of files){const row={name:file.name,type:file.name.split('.').pop().toUpperCase(),subjectId:s.id,status:'Reading…'};data.files.push(row);renderSyllabus();try{const txt=await extract(file);row.status='Extracted '+txt.length.toLocaleString()+' characters';const found=detectTopics(txt);if(found.length){s.topics=[...new Set([...s.topics,...found])];row.status+=' · '+found.length+' topic suggestions added'}else row.status+=' · no clear headings detected; add topics manually';row.textPreview=txt.slice(0,1000)}catch(e){row.status='Could not read: '+e.message}save();renderSyllabus()}renderSubjects()}
 document.getElementById('navigation').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(b)setView(b.dataset.view)});
 ['quickUpload','heroUpload','chooseFiles'].forEach(id=>document.getElementById(id).addEventListener('click',()=>{setView('syllabus');document.getElementById('fileInput').click()}));
